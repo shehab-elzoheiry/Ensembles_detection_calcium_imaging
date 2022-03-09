@@ -1,51 +1,21 @@
-% % %        'F:\Imaging\Imaging\165\NewEnsembles\Ensemble_analysis_165.mat' ...
-% % %        'F:\Imaging\Imaging\165\Cleaned_traces_165.mat'...
-files={'F:\Imaging\155\NewEnsembles\Ensemble_analysis_155.mat' ...
-       'F:\Imaging\155\Cleaned_traces_155.mat'...
-       'F:\Imaging\157\NewEnsembles\Ensemble_analysis_157.mat' ...
-       'F:\Imaging\157\Cleaned_traces_157.mat'...
-       'F:\Imaging\165\NewEnsembles\Ensemble_analysis_165.mat' ...
-       'F:\Imaging\165\Cleaned_traces_165.mat'...
-       'F:\Imaging\172\NewEnsembles\Ensemble_analysis_172.mat' ...
-       'F:\Imaging\172\Cleaned_traces_172.mat'...
-       'F:\Imaging\174\NewEnsembles\Ensemble_analysis_174.mat' ...
-       'F:\Imaging\174\Cleaned_traces_174.mat'...
-       'F:\Imaging\189\NewEnsembles\Ensemble_analysis_189.mat' ...
-       'F:\Imaging\189\Cleaned_traces_189.mat'...
-       'F:\Imaging\191\NewEnsembles\Ensemble_analysis_191.mat' ...
-       'F:\Imaging\191\Cleaned_traces_191.mat'...
-       'F:\Imaging\194\NewEnsembles\Ensemble_analysis_194.mat' ...
-       'F:\Imaging\194\Cleaned_traces_194.mat'...
-};
-% % 
-% % % files={'/media/agkann/Elements/Imaging/155/NewEnsembles/Ensemble_analysis_155.mat' ...
-% % %        '/media/agkann/Elements/Imaging/155/Cleaned_traces_155.mat'...
-% % %        '/media/agkann/Elements/Imaging/157/NewEnsembles/Ensemble_analysis_157.mat' ...
-% % %        '/media/agkann/Elements/Imaging/157/Cleaned_traces_157.mat'...
-% % %        '/media/agkann/Elements/Imaging/165/NewEnsembles/Ensemble_analysis_165.mat' ...
-% % %        '/media/agkann/Elements/Imaging/165/Cleaned_traces_165.mat'...
-% % %        '/media/agkann/Elements/Imaging/172/NewEnsembles/Ensemble_analysis_172.mat' ...
-% % %        '/media/agkann/Elements/Imaging/172/Cleaned_traces_172.mat'...
-% % %        '/media/agkann/Elements/Imaging/174/NewEnsembles/Ensemble_analysis_174.mat' ...
-% % %        '/media/agkann/Elements/Imaging/174/Cleaned_traces_174.mat'...
-% % %        '/media/agkann/Elements/Imaging/189/NewEnsembles/Ensemble_analysis_189.mat' ...
-% % %        '/media/agkann/Elements/Imaging/189/Cleaned_traces_189.mat'...
-% % %        '/media/agkann/Elements/Imaging/191/NewEnsembles/Ensemble_analysis_191.mat' ...
-% % %        '/media/agkann/Elements/Imaging/191/Cleaned_traces_191.mat'...
-% % %        '/media/agkann/Elements/Imaging/194/NewEnsembles/Ensemble_analysis_194.mat' ...
-% % %        '/media/agkann/Elements/Imaging/194/Cleaned_traces_194.mat'...
-% % % };
-% % 
-% 
-% 
-% 
-for zew=[1 3 5 7 9 11 13 15]
+%% This script is based on principal component analysis, which aims to present population vectors in multidimensional space. Followed by reducing the dimensions to 3
+% and then applying k-means clustering to group population vectors that are closest to one another. These groups are considered to be different time points of activation of 
+% detected ensembles.
+
+
+files={'F:\Imaging\NewEnsembles\Ensemble_analysis_1.mat' ...
+       'F:\Imaging\Cleaned_traces_1.mat'...
+       'F:\Imaging\NewEnsembles\Ensemble_analysis_2.mat' ...
+       'F:\Imaging\Cleaned_traces_2.mat'...
+       };
+
+for i=[1 3 5 7 9 11 13 15]
     tic
 fortitle=[155 157 165 172 174 189 191 194];
 she=[1 1 2 2 3 3 4 4 5 5 6 6 7 7 8 8];
     
-    load(files{zew},'EnsRecActIdPlotSt','EnsRecActStFrames','sSt','offsetNormdSt');
-    load(files{zew+1},'mask_');
+    load(files{i},'EnsRecActIdPlotSt','EnsRecActStFrames','sSt','offsetNormdSt');
+    load(files{i+1},'mask_');
 % load('F:\Imaging\155\NewEnsembles\Ensemble_analysis_155.mat','sSt','offsetNormdSt','EnsRecActIdPlotSt','EnsRecActStFrames')
 % load('F:\Imaging\155\Cleaned_traces_155.mat','mask_')
 mask_(:,:,end)=[];
@@ -69,26 +39,20 @@ close all
     %no=[2,3,4,5,6,7,8];                                % possibilities for number of clusters
     no= 2: sqrt(size(EnsRecActStFrames,2))+1;           % possibilities for number of clusters based on how big the sample is. The 1 is to add a cluster for the 0 events (where there are no ensembles detected)
 
-    %options=[2, 15, 0.001, 1];
-    %options=[2, 10, 0.01, 1];
-    %options=[1.5, 15, 0.01, 1];                        % fuzzines (default 2) , no of iterations, min improvement btwn iteration , show flags or not 
     options=[2, 100,  0.0001, 1]; 
     universal={};
     for i=1:length(no);
-%         score(:,1)=score(:,1)/max(score(:,1));
-%         score(:,2)=score(:,2)/max(score(:,2));
-%         score(:,3)=score(:,3)/max(score(:,3));
         [centers,U] = fcm(score(:,1:4),no(i),options);  % does the fuzzy clustering, calculates the centers and the coordinates for the observations
         maxU = max(U);
         if ~any(~isnan(U(:))), break, flag=1; end
-        for hh=1:size(U,2)                                          
-            ind(hh)= find(U(:,hh)== max(U(:,hh))  );    % determines the the membership of each frame to its cluster (to which it has highest membership 'U')
-        end
+               for hh=1:size(U,2)                                          
+                   ind(hh)= find(U(:,hh)== max(U(:,hh))  );    % determines the the membership of each frame to its cluster (to which it has highest membership 'U')
+               end
         test(i)=length(unique(ind));
         if length(unique(ind))~=no(i)                   % sometimes although you ask for certain number of clusters, fcm fails to give that number, it gives something less,
             break                                       % therefore break the loop here, because it already means that further clusters won't be better
         end
-        %DI=dunns(no(i),D,ind);
+
         DI(i)=dunns(no(i),Z,ind);                       % determines the DI to the number of clusters set for this iteration in the for-loop
         universal{i,1}=centers;
         universal{i,2}=U;
@@ -410,8 +374,6 @@ toc
 
 end
 
-
-
 %% this part should be after the summing up of all summary files 
 %correlating no of cells to no of events
 
@@ -429,8 +391,6 @@ for n=1:length(summaries)
     cells_always(n:n)=summary{1,12};
     clear summary
 end
-
-
 
 % correlations
         for i=1:8
@@ -465,10 +425,7 @@ end
         xlabel('noOFevents'); ylabel('noOFmotifs'); xlim([0 max(noOFevents)+4]) ; ylim([0 max(noOFmotifs)+1]);
         savefig(['Fig_Correlating_' 'Events_vs_Motifs' '_.fig']); close
 
-
 %% The map of ensembles with their SD of activity 
-    
-
     no=[155 157 165 172 174 189 191 194 ];   
     summaries=dir('Summary*');    
 for zew=1:length(no)
@@ -481,8 +438,6 @@ for zew=1:length(no)
 end
     gam_rot_ens=Ensembles;
     
-    
-
 no_gamma=[155     157     165     172     174     189     191     194    ];
 no_roten=[    156     158     166     173     175     190     192     195];
 for m=1:length(no_gamma)
@@ -499,7 +454,6 @@ for m=1:length(no_gamma)
     clear clean_traces
 end
 
-
 for i=1:size(gam_rot_ens,1)
     clean_traces_gam = preclean_traces_gam{i};
     clean_traces_rot = preclean_traces_rot{i};
@@ -508,8 +462,6 @@ for i=1:size(gam_rot_ens,1)
         for k=1:length(gam_rot_ens{i,j})
             gam_rot_ens{i,j}(k,2) = trapz(clean_traces_gam(gam_rot_ens{i,j}(k,1),:),2); % AUC for this cell during gamma 
             gam_rot_ens{i,j}(k,3) = trapz(clean_traces_rot(gam_rot_ens{i,j}(k,1),:),2); % AUC for this cell during rotenone 
-
-
             measurements = regionprops(mask_(:,:,gam_rot_ens{i,j}(k,1)), 'Centroid');
             allCentroids(1,:) = [measurements.Centroid];
             gam_rot_ens{i,j}(k,4:5)=allCentroids;
@@ -616,36 +568,9 @@ end
     imagesc(log10(ens_SD)), title('Ensembles_SD_log'); colorbar
     savefig('Ensembles_SD_log_.fig'); close
 
-%% extract activity of all cells from 'gam_rot_ens'
-% 
-% for i=1:size(gam_rot_ens,1)
-%     for j=1:size(gam_rot_ens,2)
-%         if isempty(gam_rot_ens{i,j}), break, end
-%         
-%             gam_avg=gam_rot_ens{i,j}(:,2);
-%             rot_avg=gam_rot_ens{i,j}(:,3);
-%             if i==1 && j==1
-%                     heatmap(1,:)=gam_avg';
-%                     heatmap(2,:)=rot_avg';
-%             else
-%                     ind=length(heatmap); % trick to avoid the changing size after the next line which screws the following line 
-%                     heatmap(1,ind+1:ind+length(gam_avg))=gam_avg';
-%                     heatmap(2,ind+1:ind+length(rot_avg))=rot_avg';
-%             end
-% 
-%        
-%     end
-% end
-
 %% Correcting cells countings
-files={'F:\Imaging\155\NewEnsembles\Ensemble_analysis_155.mat' ...
-       'F:\Imaging\157\NewEnsembles\Ensemble_analysis_157.mat' ...
-       'F:\Imaging\165\NewEnsembles\Ensemble_analysis_165.mat' ...
-       'F:\Imaging\172\NewEnsembles\Ensemble_analysis_172.mat' ...
-       'F:\Imaging\174\NewEnsembles\Ensemble_analysis_174.mat' ...
-       'F:\Imaging\189\NewEnsembles\Ensemble_analysis_189.mat' ...
-       'F:\Imaging\191\NewEnsembles\Ensemble_analysis_191.mat' ...
-       'F:\Imaging\194\NewEnsembles\Ensemble_analysis_194.mat' ...
+files={'F:\Imaging\Ensemble_analysis_1.mat' ...
+       'F:\Imaging\Ensemble_analysis_2.mat' ...
 };
 fortitle=[155 157 165 172 174 189 191 194];
 summaries=dir('Summary*');
@@ -663,120 +588,3 @@ for n=1:length(summaries)
     save(['Summary_' num2str(fortitle(n)) '.mat'], 'summary');
     clear summary EnsRecActIdPlotSt members
 end
-
-
-    
-%%
-% % correlation coefficient
-% names=dir ('*.mat');
-% corrMAT=[];
-% corrMAT_sum=[];
-% for ii=1:8
-% load(names(ii).name);
-% NormdSt=x;
-% [coeff,score,latent,~,explained]=pca(NormdSt);
-% corrMAT(ii,1)=explained(1);
-% corrMAT(ii,2)=size(score,2);
-% corrMAT_sum(ii,1)=sum(explained(1:3));
-% corrMAT_sum(ii,2)=size(score,2);
-% clearvars -except  names corrMAT corrMAT_sum
-% end
-% 
-% [R,P] = corrcoef(corrMAT);
-% [R_sum,P_sum] = corrcoef(corrMAT_sum);
-% figure, for i=1:8, plot(corrMAT(i,1) ,corrMAT(i,2),'b.','MarkerSize',15); hold on; end
-% figure, for i=1:8, plot(corrMAT_sum(i,1) ,corrMAT_sum(i,2) ,'r.','MarkerSize',15); hold on; end
-% 
-% 
-% 
-% 
-% 
-% 
-
-% binned values
-% [coeff,score,latent,~,explained]=pca(binNormdSt');
-% figure,biplot(coeff(:,1:3),'scores',score(:,1:3))
-% 
-% 
-% % 111111
-% rawNormdSt=NormdSt;
-% rawNormdSt(rawNormdSt>0)=1;
-% [coeff,score,latent,~,explained]=pca(rawNormdSt);
-% figure,biplot(coeff(:,1:2),'scores',score(:,1:2))
-% 
-% 
-% 
-
-
-
-
-
-
-
-%% the matrix is NOT circulating around itself
-% rawNormdSt=NormdSt;
-% %rawNormdSt(rawNormdSt>0)=1;
-% bins=[1 2 4 8 12 16 20 40];
-% timediff=[5 10 30 60 90 120];
-% fr=4;
-% preSImatrix=nan(1200,length(timediff),length(bins));
-% 
-% for j=1:length(bins) % for each bin width
-%    
-%     % create the binned matrix from the original matrix
-%     if bins(j)>1                   
-%         binNormdSt=zeros(floor(size(rawNormdSt,1)/bins(j)),size(rawNormdSt,2));
-%         for k=1:size(binNormdSt,1)
-%             binNormdSt(k:k,1:size(rawNormdSt,2))=sum(rawNormdSt( bins(j)*(k-1)+1 : bins(j)*(k)  ,:),1);   %%(bins(j)*k)-(bins(j)-1):bins(j)*k
-%         end
-%     else
-%         binNormdSt=rawNormdSt;
-%     end
-%    
-%     tempbinNormdSt=nan(size(binNormdSt,1),size(binNormdSt,2)) ;
-%    
-%     for i=1:length(timediff) % for each time difference range
-%         for kk=1:size(binNormdSt,1) % for every bin of data
-%                
-%             ind = floor(1+timediff(i)*(fr/bins(j)));
-%             
-%             if kk  + ind <=    size(binNormdSt,1)
-% 
-%                     tempbinNormdSt(1:size(binNormdSt(kk:end,:),1),:)              =      binNormdSt(kk:end,:);     
-%                     if kk>1 
-%                        tempbinNormdSt(size(binNormdSt(kk:end,:),1)+1 : end,   :)  =      binNormdSt(1:kk-1,:)  ;
-%                     end
-%                     
-%                     
-%                           %ind = floor(1+timediff(i)*(fr/bins(j)));
-%                     if    ind > size (tempbinNormdSt,1)
-%           
-%                           preSImatrix(kk,i,j) = (dot(tempbinNormdSt(1,:),tempbinNormdSt(end,:)))/...                     
-%                                                ((dot(tempbinNormdSt(1,:),tempbinNormdSt(1,:))  +  (dot(tempbinNormdSt(end,:),tempbinNormdSt(end,:))))    /2); 
-%                     else
-%                           preSImatrix(kk,i,j) = (dot(tempbinNormdSt(1,:),tempbinNormdSt(ind,:)))/...                     
-%                                                ((dot(tempbinNormdSt(1,:),tempbinNormdSt(1,:))  +  (dot(tempbinNormdSt(ind,:),tempbinNormdSt(ind,:))))    /2); 
-%           
-%                     end
-%                     
-%             else
-%                 continue
-%             end
-%           
-%         end
-%         %clear tempbinNormdSt
-%     end
-% end
-% 
-% 
-% final=[];
-% for ii= 1:length(bins)
-%     %for jj=1:length(timediff)
-%         AVG_final(ii,:)=mean(preSImatrix(:,:,ii),1,'omitnan');
-%         STD_final(ii,:)= std(preSImatrix(:,:,ii),1,'omitnan');
-%         SEM_final(ii,:)= STD_final(ii,:)/sqrt(size(preSImatrix,1)) ;
-%     %end
-% end
-% % 
-% 
-%
