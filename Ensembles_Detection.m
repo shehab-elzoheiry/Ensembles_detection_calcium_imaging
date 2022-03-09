@@ -220,7 +220,6 @@ end
 % end
 
 %% Plot Ens act 
-
 %Offset normalized Ca traces
 offset = 1:nCells;
 offsetNormdSt = bsxfun(@plus, NormdSt, offset);                                            %%% for the sake of plotting, each normalised trace is offset by its order to present each cell separately
@@ -233,12 +232,6 @@ for i = 1:nFrames                                                               
        offsetEnsActSt(i) = NaN;
     end
 end
-% offsetEnsDeactSt = bsxfun(@plus, EnsDeactSt, offset);
-% for i = 1:nFrames
-%     if offsetEnsDeactSt(i) == offset
-%        offsetEnsDeactSt(i) = NaN;
-%     end
-% end
 
 figure(2)
 plot(sSt,offsetNormdSt,'color',[0.4 0.7 1])                                                 %%% plots normalised traces of all cells
@@ -253,9 +246,8 @@ savefig([savedir{files} 'Fig2 EnsCaSt.fig'])
 hold off
 close
 %% Calculate Similarity index (SI = cosine of the angle between the vectors) between each Id vector pair)    
-                                                                                     %%%% is the heading correct about using the COSINE ??
+                                                                                           
 %Act
-
 nFrames = size(EnsActIdSt,2);                                                               %%% uses the frames that are above the cutoff
 SIactIdSt = zeros(nFrames,nFrames);                                                         %%% creates a sqaure shape matrix for ploting SI between all pairs of frames (that are above the cutoff) 
 parfor i = 1:nFrames
@@ -271,26 +263,7 @@ for i = 1:nFrames
     SIactIdStPlot = vertcat(SIactIdStPlot,SIactIdSt(i+1:nFrames,i));                  
 end
 
-% %Deact
-% nFrames = size(EnsDeactIdSt,2);
-% SIdeactIdSt = zeros(nFrames,nFrames);
-% parfor i = 1:nFrames
-%     for ii = 1:nFrames
-%         SIdeactIdSt(i,ii) = (dot(EnsDeactIdSt(:,i),EnsDeactIdSt(:,ii)))/...
-%             ((dot(EnsDeactIdSt(:,i),EnsDeactIdSt(:,i))+(dot(EnsDeactIdSt(:,ii),EnsDeactIdSt(:,ii))))/2);
-%     end
-% end
-% 
-% %Concatenate the SI calculations in one vector
-% 
-% SIdeactIdStPlot = [];
-% for i = 1:nFrames
-%     SIdeactIdStPlot = vertcat(SIdeactIdStPlot,SIdeactIdSt(i+1:nFrames,i));
-% end
-
-
 %% Determine SI of resampled random chance level ensembles                                       %%% SIactIdShiftPl --> SIactIdShiftPlo --> SIactIdShiftPlot
-
 %Generate random shift along frames and evaluate SI of rearranged random ensembles              
 %Act
 
@@ -329,40 +302,6 @@ end
 % Determine 99% quantile as upper cutoff chance level recurrent coactivity
 UpCutoffSIactSt = quantile(SIactIdShiftPlot,0.99);                                               %%% calculating the whatever quantile of the randomly distributed SI 
 
-% %Deact
-% EnsDeactIdShift = EnsDeactIdSt;
-% nFrames = size(EnsDeactIdSt,2);
-% SIdeactIdShiftPlo = zeros((((nFrames^2)-nFrames)/2),10000);
-% 
-% for iii = 1:10000
-%     for i = 1:nCells
-%         Shift = round((nFrames)*(rand));
-%         EnsDeactIdShift(i,:) = circshift(EnsDeactIdShift(i,:),Shift,2); %random circular frame shift for each cell
-%     end
-%     % Calculate SI
-%     SIdeactIdShift = NaN(nFrames,nFrames);
-%     for i = 1:nFrames
-%         for ii = i+1:nFrames
-%         SIdeactIdShift(i,ii) = (dot(EnsDeactIdShift(:,i),EnsDeactIdShift(:,ii)))/...
-%             ((dot(EnsDeactIdShift(:,i),EnsDeactIdShift(:,i))+(dot(EnsDeactIdShift(:,ii),EnsDeactIdShift(:,ii))))/2);
-%         end
-%     end
-%     SIdeactIdShiftPl = [];
-%     for i = 1:nFrames
-%         SIdeactIdShiftPl = vertcat(SIdeactIdShiftPl,SIdeactIdShift(i,((i+1):nFrames))');
-%     end
-%     SIdeactIdShiftPlo(:,iii) = SIdeactIdShiftPl;
-% end
-% 
-% %Concatenate the SI calculations in one vector
-% SIdeactIdShiftPlot = [];
-% for i = 1:10000
-%     SIdeactIdShiftPlot = vertcat(SIdeactIdShiftPlot,SIdeactIdShiftPlo(:,i));
-% end
-% 
-% % Determine 99% quantile as upper cutoff chance level recurrent coactivity
-% UpCutoffSIdeactSt = quantile(SIdeactIdShiftPlot,0.99); 
-
 %% Plot chance level recurrent coactivity histogram vs data
 %Act
 figure(3)
@@ -370,7 +309,7 @@ histogram(SIactIdShift,'NumBins', 50, 'BinWidth', 0.02,'Normalization', 'probabi
 hold on
 histogram(SIactIdSt,'NumBins', 50, 'BinWidth', 0.02,'Normalization', 'probability')                 %%% histogram of non-randomised SIs (in brown)
 xlim([0 1])
-% ylim([0 0.05])
+
 %plot cutoff lines
 line([UpCutoffSIactSt UpCutoffSIactSt], ylim,'color', [0 0 0])                                      %%% vertical line representing the upper cutoff (based on randomised SIs)
 title(['\fontsize{8} Stimulated vs. resampled'])
@@ -423,7 +362,7 @@ for i = 1:nFrames % 19916
 end
 
 PercFramesEnsRecActSt = ((sum((sum(EnsRecActIdPlotSt,'omitnan')) > 0))/nFrames)*100;  %%% ????????? why not just the size(EnsRecActStFrames,2)
-% 
+
 % % Percentage of frames above cutoff DEACT
 % 
 % % Get Ens deact above cutoff for plotting.
@@ -459,12 +398,6 @@ for i = 1:nFrames                                                       %%% this
        offsetEnsActSt(i) = NaN;
     end
 end
-% offsetEnsDeactSt = bsxfun(@plus, EnsDeactSt, offset);
-% for i = 1:nFrames
-%     if offsetEnsDeactSt(i) == offset
-%        offsetEnsDeactSt(i) = NaN;
-%     end
-% end
 
 figure(5)
 plot(sSt,offsetNormdSt,'color',[0.4 0.7 1])                             %%% plots normalised traces of all cells
@@ -504,32 +437,6 @@ xlabel('Co-active event #')
 ylabel('Co-active event #')
 savefig([savedir{files} 'Fig7 SIrecurrentActSt.fig'])
 close
-% %Deact
-% figure(8)
-% imagesc(SIdeactIdSt, [0 1])
-% axis image
-% axis square
-% axis vis3d
-% title(['\fontsize{8} SI of ensemble deactivations'])
-% set(gca,'FontSize',8);
-% xlabel('Co-inactive event #')
-% ylabel('Co-inactive event #')
-% savefig('SIdeactSt.fig')
-% 
-% figure(9)
-% imagesc(SIdeactIdSt, [UpCutoffSIdeactSt 1])
-% axis image
-% axis square
-% axis vis3d
-% title(['\fontsize{8} SI of recurrent ensemble deactivations'])
-% set(gca,'FontSize',8);
-% xlabel('Co-inactive event #')
-% ylabel('Co-inactive event #')
-% savefig('SIrecurrentDeactSt.fig')
-
-%%
-%% Determine Ensemble diversity
-
 
 if  isempty(EnsRecActIdSt)
     RelNumClustEnsActSt=0;
@@ -554,41 +461,18 @@ else
     savefig([savedir{files} 'Fig10 DendrogramEnsActSt.fig'])
     close
 
-    % %Deact
-    % % Hierarchical tree
-    % RecDeactIdTreeSt = linkage(EnsRecDeactIdSt', 'weighted','cosine');
-    % 
-    % %Cluster data and get relative diversity of ensembles
-    % ClustersDeactSt = cluster(RecDeactIdTreeSt,'criterion','distance','cutoff',UpCutoffSIdeactSt);
-    % RelNumClustEnsDeactSt = (max(ClustersDeactSt))/(size(EnsRecDeactIdSt,2));
-    % 
-    % % Plot dendrogram
-    % figure(11)
-    % dendrogram(RecDeactIdTreeSt,0)
-    % line(xlim, [UpCutoffSIdeactSt UpCutoffSIdeactSt],'color', [1 0 0])
-    % set(gca,'xtick',[])
-    % title(['\fontsize{8} Diversity of ensemble deactivations'])
-    % set(gca,'FontSize',8);
-    % ylabel('SI')
-    % savefig('DendrogramEnsDeactSt.fig')
-end
-%% Result vector with:
-% % of frames with higher than chance level co-active events
-% % of frames with higher than chance level recurrent co-active events (Ensembles)
-% Diversity index of ensembles
-
-%%%%%%%%%%%%%%%%%%% 
+%%
 if  isempty(EnsRecActIdSt)
     percCellsRecru=0; RecruCellsID=[]; percEnsDur=0;general_sim=0;thresh4clust=[];
 else
-[percCellsRecru, RecruCellsID, percEnsDur] = SE_ensembles_parameters(EnsActStAll,EnsRecActStFrames,EnsRecActIdSt,dfoverf0St);
-[thresh4clust,general_sim] =                 SE_ensembles_thresh(EnsRecActIdSt,1000,0.95,RecActIdTreeSt);                           %%% SE_ensembles_thresh(EnsRecActIdSt,iterations,quartile,RecActIdTreeSt)
+    [percCellsRecru, RecruCellsID, percEnsDur] = SE_ensembles_parameters(EnsActStAll,EnsRecActStFrames,EnsRecActIdSt,dfoverf0St);
+    [thresh4clust,general_sim] =                 SE_ensembles_thresh(EnsRecActIdSt,1000,0.95,RecActIdTreeSt);                           %%% SE_ensembles_thresh(EnsRecActIdSt,iterations,quartile,RecActIdTreeSt)
 end
-%AUC=sum(NormdSt,1); meanAUCs=mean(sum(NormdSt,1)); medianAUCs=median(sum(NormdSt,1));                                               %%% old way calculating area under the curve of the normalised traces, additionally the mean and median
-AUC=trapz(clean_traces,2); meanAUCs=mean(trapz(clean_traces,2)); medianAUCs=median(trapz(clean_traces,2));                                          %%% new way calculating AUC
+%AUC=sum(NormdSt,1); meanAUCs=mean(sum(NormdSt,1)); medianAUCs=median(sum(NormdSt,1));                                                  %%% old way calculating area under the curve of the normalised traces, additionally the mean and median
+AUC=trapz(clean_traces,2); meanAUCs=mean(trapz(clean_traces,2)); medianAUCs=median(trapz(clean_traces,2));                                      %%% new way calculating AUC
 EnsAUC=sum(NormdSt(:,RecruCellsID),1); meanEnsAUCs=mean(sum(NormdSt(:,RecruCellsID),1)); medianEnsAUCs=median(sum(NormdSt(:,RecruCellsID),1));  %%% same but for cells recruited in ensembles
 [percDepolCells , diffMaxMinEvent] = SE_ensembles_depolCells(NormdSt);
-%%%%%%%%%%%%%%%%%%%
+%%
 
 Result(1,:)  =    {'PercFramesEnsRecActSt', PercFramesEnsRecActSt};
 Result(2,:)  =    {'RelNumClustEnsActSt', RelNumClustEnsActSt};
