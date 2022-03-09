@@ -19,11 +19,8 @@ for i=1:length(xx)
     maximum(i)=max(NormdSt(:,xx(i)));   %max. value
     minimum(i)=min(NormdSt(:,xx(i)));   %min. value
 end
-if isempty(xx)
-diffMaxMinEvent = ['No cells that are constantly depolarised'];
+if  isempty(xx)
+    diffMaxMinEvent = ['No cells that are constantly depolarised'];
 else
-diffMaxMinEvent = maximum-minimum;           %biggest difference
+    diffMaxMinEvent = maximum-minimum;           %biggest difference
 end 
-% for i=1:nCells
-% line([1 300],[i i],'LineWidth',0.01)
-% end
