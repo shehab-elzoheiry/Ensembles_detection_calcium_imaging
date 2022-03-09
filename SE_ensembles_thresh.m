@@ -40,7 +40,3 @@ set(gca,'FontSize',8);
 ylabel('SI')
 
 general_sim=mean(RecActIdTreeSt(:,3));                                                                      %%% general similarity of the whole dendrogram
-
-
-
-
