@@ -1,120 +1,54 @@
-%% Bootstrapping apporach to detect above chance level coincident Ca++ imaging signals based of Hamm et al., Neuron 2017.
-% Juan C. Boffi: boffi@ana.uni-heidelberg.de
+%% This script is based on bootstrapping apporach to detect above chance level coincident Ca++ imaging signals based on Hamm et al., Neuron 2017.
+% This is combined effort from Shehabeldin Elzoheiry: shehab.elzohairy@gmail.com & Juan C. Boffi: boffi@ana.uni-heidelberg.de
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% VARIABLES INDEX %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% dfoverf0St       !!!       = delta fluorescne over basal fluorescence. (n.m) n = length of recording & m = number of cells
+% dfoverf0St             = delta fluorescne over basal fluorescence. (n.m) n = length of recording & m = number of cells
 % dt                     = sampling rate in miliseconds
-% DownCutoffSt	         = lower cutoff, based on the 1st percentile of the randomised (bootstraped) data
-% f0St 	                 = value of basal fluorescence level of each cell. (1.m) m = number of cells
+% DownCutoffSt	          = lower cutoff, based on the 1st percentile of the randomised (bootstraped) data
+% f0St 	                = value of basal fluorescence level of each cell. (1.m) m = number of cells
 % FrameAvgSt             = average normalised activity of all cells at each time point. (n.1) n = length of recording
-% EnsActIdSt 	         = logical, true at time points AND cells with activity above cutoff. (n.m) n = number of cells & m = number of frames above cutoff 
+% EnsActIdSt 	          = logical, true at time points AND cells with activity above cutoff. (n.m) n = number of cells & m = number of frames above cutoff 
 % EnsActIdShift          = randomly shifted version of EnsActIdSt. (n.m) n = number of cells & m = number of above-cutoff frames. 
 % EnsActIdPlotSt         = mark of cells with above cutoff-activity at above-cutoff frames, for plotting red marks in figures. (n.m) n = number of cells & m = number of frames 
 % EnsActIdStNonZero      = indices of frames with above-cutoff activity. (1.n) number of frames with above-cutoff activity
 % EnsActSt	             = logical, true for first frames of each event contributing to above-cutoff frames. (n.1) n= number of frames
-% EnsActStAll	         = logical, true for frames showing average (normalised to itself) cells activity above cutoff. (n.1) n = number of frames
-% EnsCaActSt	         = traces of all cells at frames belonging to above-cutoff frames. (n.m) n = number of cells & m = number of frames
-% EnsRecActIdSt	         = logical, true for frames that have SIs above upper cutoff of randomised SIs. (n.m) n = number of cells & m = number of frames showing ensembles activity
+% EnsActStAll	          = logical, true for frames showing average (normalised to itself) cells activity above cutoff. (n.1) n = number of frames
+% EnsCaActSt	          = traces of all cells at frames belonging to above-cutoff frames. (n.m) n = number of cells & m = number of frames
+% EnsRecActIdSt	       = logical, true for frames that have SIs above upper cutoff of randomised SIs. (n.m) n = number of cells & m = number of frames showing ensembles activity
 % EnsRecActStFrames      = index of frames that have SIs above upper cutoff of randomised SIs. (1.n) n = number of frames showing ensembles activity
 % EnsRecActIdPlotSt      = for plotting, marks cells recruited in ensembles at times when ensembles are active. (n.m) n = number of cells & m = length of recording
-% nCells 		         = number of cells analysed
+% nCells 		          = number of cells analysed
 % nFrames 	             = length of recording (number of frames) (sometimes this variable changes in different sections)
-% NormdSt		         = fluorescence of each trace normalised to the maximum of itself. (n.m) n = length of recording & m = number of cells
-% NormdFShift	         = RANDOMISED (bootstraped) fluorescence of each trace normalised to the maximum of itself. (n.m) n = length of recording & m = number of cells
+% NormdSt		          = fluorescence of each trace normalised to the maximum of itself. (n.m) n = length of recording & m = number of cells
+% NormdFShift	          = RANDOMISED (bootstraped) fluorescence of each trace normalised to the maximum of itself. (n.m) n = length of recording & m = number of cells
 % offsetNormdSt          = for plotting, all normalised traces are off-set according to their order. (n.m) n = length of recording & m = number of cells
 % offsetEnsActSt         = for plotting, marking the beginings of above-cutoff events. (n.1) n = length of recording.
 % PercFramesEnsActSt     = percentage of frames contributing to above-cutoff events out of all frames (whole recording)
 % PercFramesEnsRecActSt  = percentage of frames contributing to ensemble's activity out of all frames (whole recording)
 % rawSt   	             = raw calcium traces matrix. (n.m) n = length of recording & m = number of cells
-% RandFrameAvg	         = average of the 10000 shifts (randomised) of all cells at each frame. (n.10000) n = length of recording (frames)
+% RandFrameAvg	          = average of the 10000 shifts (randomised) of all cells at each frame. (n.10000) n = length of recording (frames)
 % RandFrameAvgSt         = concatenated randomised activity values of each cell, to calculate the upper and lower cutoffs. (n.1) n = sum of lengths of concatenated shifts (cells *frames)
-% SIactIdSt   	         = similarity index between all above-cutoff frames. (n.n) n = number of above-cutoff frames.
-% SIactIdStPlot          = ????????????????????? vertically concatenated similarity index of all frames. (n.1) n = length of concatenated SIs   
-% SIactIdShift	         = similarity index between all (randomly shifted) above-cutoff frames. (n.n) n = number of above-cutoff frames.
-% SIactIdShiftPl	     = verticaly concatenated SIs of (randomly shifted) above-cutoff frames. (n.1) n = length of concatenated SIs   
-% SIactIdShiftPlo	     = all (the 1000 or 10000) verticaly concatenated SIs of (randomly shifted) above-cutoff frames. (n.m) n = length of concatenated SIs & m = iterations for boostrap
+% SIactIdSt   	          = similarity index between all above-cutoff frames. (n.n) n = number of above-cutoff frames.
+% SIactIdStPlot          = ? vertically concatenated similarity index of all frames. (n.1) n = length of concatenated SIs   
+% SIactIdShift	          = similarity index between all (randomly shifted) above-cutoff frames. (n.n) n = number of above-cutoff frames.
+% SIactIdShiftPl	       = verticaly concatenated SIs of (randomly shifted) above-cutoff frames. (n.1) n = length of concatenated SIs   
+% SIactIdShiftPlo	       = all (the 1000 or 10000) verticaly concatenated SIs of (randomly shifted) above-cutoff frames. (n.m) n = length of concatenated SIs & m = iterations for boostrap
 % SIactIdShiftPlot       = vertical concatenation of the 1000 or 10000 vertical concatenations of the SIs of (randomly shifted) above-cutoff frames. (n.1) n = length of all bootstrapped SIs
 % sSt 		             = time axis. (1.m) m = time point for each frame
-% UpCutoffSt 	         = upper cutoff, based on the 99th percentile of the randomised (bootstraped) data
+% UpCutoffSt 	          = upper cutoff, based on the 99th percentile of the randomised (bootstraped) data
 % UpCutoffSIactSt        = upper 99 percentile of the bootstrapped SIs
+
 %% Automation (Batch Analysis)
-%     openfile={'/media/agkann/Elements/Imaging/157/Cleaned_traces_157'};
-   openfile={ '/media/agkann/Elements/Imaging/155/Cleaned_traces_155', ...
-              '/media/agkann/Elements/Imaging/156/Cleaned_traces_156', ...
-              '/media/agkann/Elements/Imaging/157/Cleaned_traces_157', ...
-              '/media/agkann/Elements/Imaging/158/Cleaned_traces_158', ...
-              '/media/agkann/Elements/Imaging/163/Cleaned_traces_163', ...
-              '/media/agkann/Elements/Imaging/164/Cleaned_traces_164', ...
-              '/media/agkann/Elements/Imaging/165/Cleaned_traces_165', ...
-              '/media/agkann/Elements/Imaging/166/Cleaned_traces_166', ...
-              '/media/agkann/Elements/Imaging/167/Cleaned_traces_167', ...
-              '/media/agkann/Elements/Imaging/168/Cleaned_traces_168', ...
-              '/media/agkann/Elements/Imaging/170/Cleaned_traces_170', ...
-              '/media/agkann/Elements/Imaging/171/Cleaned_traces_171', ...
-              '/media/agkann/Elements/Imaging/172/Cleaned_traces_172', ...
-              '/media/agkann/Elements/Imaging/173/Cleaned_traces_173', ...
-              '/media/agkann/Elements/Imaging/174/Cleaned_traces_174', ...
-              '/media/agkann/Elements/Imaging/175/Cleaned_traces_175', ...
-              '/media/agkann/Elements/Imaging/176/Cleaned_traces_176', ...
-              '/media/agkann/Elements/Imaging/177/Cleaned_traces_177', ...
-              '/media/agkann/Elements/Imaging/189/Cleaned_traces_189', ...
-              '/media/agkann/Elements/Imaging/190/Cleaned_traces_190', ...
-              '/media/agkann/Elements/Imaging/191/Cleaned_traces_191', ...
-              '/media/agkann/Elements/Imaging/192/Cleaned_traces_192', ...
-              '/media/agkann/Elements/Imaging/194/Cleaned_traces_194', ...
-              '/media/agkann/Elements/Imaging/195/Cleaned_traces_195', ...
+   openfile={ '/media/Cleaned_traces_1', ...
+              '/media/Cleaned_traces_2', ...
              };
    
-%    savedir={  '/media/agkann/Elements/Imaging/157/Ensembles/'};
-   savedir={  '/media/agkann/Elements/Imaging/155/NewEnsembles/', ...
-              '/media/agkann/Elements/Imaging/156/NewEnsembles/', ...
-              '/media/agkann/Elements/Imaging/157/NewEnsembles/', ...
-              '/media/agkann/Elements/Imaging/158/NewEnsembles/', ...
-              '/media/agkann/Elements/Imaging/163/NewEnsembles/', ...
-              '/media/agkann/Elements/Imaging/164/NewEnsembles/', ...
-              '/media/agkann/Elements/Imaging/165/NewEnsembles/', ...
-              '/media/agkann/Elements/Imaging/166/NewEnsembles/', ...
-              '/media/agkann/Elements/Imaging/167/NewEnsembles/', ...
-              '/media/agkann/Elements/Imaging/168/NewEnsembles/', ...
-              '/media/agkann/Elements/Imaging/170/NewEnsembles/', ...
-              '/media/agkann/Elements/Imaging/171/NewEnsembles/', ...
-              '/media/agkann/Elements/Imaging/172/NewEnsembles/', ...
-              '/media/agkann/Elements/Imaging/173/NewEnsembles/', ...
-              '/media/agkann/Elements/Imaging/174/NewEnsembles/', ...
-              '/media/agkann/Elements/Imaging/175/NewEnsembles/', ...
-              '/media/agkann/Elements/Imaging/176/NewEnsembles/', ...
-              '/media/agkann/Elements/Imaging/177/NewEnsembles/', ...
-              '/media/agkann/Elements/Imaging/189/NewEnsembles/', ...
-              '/media/agkann/Elements/Imaging/190/NewEnsembles/', ...
-              '/media/agkann/Elements/Imaging/191/NewEnsembles/', ...
-              '/media/agkann/Elements/Imaging/192/NewEnsembles/', ...
-              '/media/agkann/Elements/Imaging/194/NewEnsembles/', ...
-              '/media/agkann/Elements/Imaging/195/NewEnsembles/', ...
+   savedir={  '/media/NewEnsembles_1/', ...
+              '/media/NewEnsembles_2/', ...
              };
-%    savefile={ '/media/agkann/Elements/Imaging/157/Ensembles/Ensemble_analysis_157'};
-   savefile={ '/media/agkann/Elements/Imaging/155/NewEnsembles/Ensemble_analysis_155', ...
-              '/media/agkann/Elements/Imaging/156/NewEnsembles/Ensemble_analysis_156', ...
-              '/media/agkann/Elements/Imaging/157/NewEnsembles/Ensemble_analysis_157', ...
-              '/media/agkann/Elements/Imaging/158/NewEnsembles/Ensemble_analysis_158', ...
-              '/media/agkann/Elements/Imaging/163/NewEnsembles/Ensemble_analysis_163', ...
-              '/media/agkann/Elements/Imaging/164/NewEnsembles/Ensemble_analysis_164', ...
-              '/media/agkann/Elements/Imaging/165/NewEnsembles/Ensemble_analysis_165', ...
-              '/media/agkann/Elements/Imaging/166/NewEnsembles/Ensemble_analysis_166', ...
-              '/media/agkann/Elements/Imaging/167/NewEnsembles/Ensemble_analysis_167', ...
-              '/media/agkann/Elements/Imaging/168/NewEnsembles/Ensemble_analysis_168', ...
-              '/media/agkann/Elements/Imaging/170/NewEnsembles/Ensemble_analysis_170', ...
-              '/media/agkann/Elements/Imaging/171/NewEnsembles/Ensemble_analysis_171', ...
-              '/media/agkann/Elements/Imaging/172/NewEnsembles/Ensemble_analysis_172', ...
-              '/media/agkann/Elements/Imaging/173/NewEnsembles/Ensemble_analysis_173', ...
-              '/media/agkann/Elements/Imaging/174/NewEnsembles/Ensemble_analysis_174', ...
-              '/media/agkann/Elements/Imaging/175/NewEnsembles/Ensemble_analysis_175', ...
-              '/media/agkann/Elements/Imaging/176/NewEnsembles/Ensemble_analysis_176', ...
-              '/media/agkann/Elements/Imaging/177/NewEnsembles/Ensemble_analysis_177', ...
-              '/media/agkann/Elements/Imaging/189/NewEnsembles/Ensemble_analysis_189', ...
-              '/media/agkann/Elements/Imaging/190/NewEnsembles/Ensemble_analysis_190', ...
-              '/media/agkann/Elements/Imaging/191/NewEnsembles/Ensemble_analysis_191', ...
-              '/media/agkann/Elements/Imaging/192/NewEnsembles/Ensemble_analysis_192', ...
-              '/media/agkann/Elements/Imaging/194/NewEnsembles/Ensemble_analysis_194', ...
-              '/media/agkann/Elements/Imaging/195/NewEnsembles/Ensemble_analysis_195', ...
+             
+   savefile={ '/media/Ensemble_analysis_1', ...
+              '/media/Ensemble_analysis_2', ...
              };
 %%             
    tic         
@@ -124,51 +58,35 @@ for files=1:length(openfile)
 %% Import Raw F traces as numeric matrix. Columns = cells, Rows = frames. Name array 'rawSt'.
 
 % Set your adquisition rate
-dt = .250;                                                                                   %%% in milliseconds
-
-%%%%%%%%%%%%%%%shehab
+dt = .250;                                                        %%% in milliseconds
 if mod(files,2)==0                                                %%% if you are analyzing an even number file (rotenone) 
 load(savefile{files-1}, 'rawSt');                                 %%% import the rawSt from the previous (baseline)
 rawSt_former=rawSt; clear rawSt                                   %%% now clear it to avoid confusing with the rawSt that is belonging to the file being analysed in this loop
 end
-clean_traces(end,:)=[];                                           %%%%%%%%% shehab In case I am using original traces from the begining
+clean_traces(end,:)=[];                                           %%%%%%%%% In case I am using original traces from the begining
 smooth_traces = movmean(clean_traces,(1/dt),2);                                              %%% smoothing the traces using sliding average
 %rawSt=detrend(smooth_traces');                                                              %%% taking offsets away 
 rawSt=smooth_traces';
-%%%%%%%%%%%%%%%shehab
 
 %calculate F0 as 40% quantile
-%%%f0St = ((median(rawSt)-min(rawSt))./1.25)+min(rawSt);          %%%%%%%%%%%%%%Juan%%%%%%%%%%   %%% choose how do you want to calculate F0 (median -min is 50 then divide by factor to get final threshold)
-%f0St = 0.2 .* max(rawSt);                                        %%%%%%%%% shehab In case I am using denoised traces from the begining 
+%%%f0St = ((median(rawSt)-min(rawSt))./1.25)+min(rawSt);          %%% choose how do you want to calculate F0 (median -min is 50 then divide by factor to get final threshold)
+%f0St = 0.2 .* max(rawSt);                                        %%%In case I am using denoised traces from the begining 
 
 if mod(files,2)==0                                                      %%% if you are analyzing an even number file (rotenone) 
     f0St = 0.2 .*(max(rawSt_former) - min(rawSt_former)) + min(rawSt_former);  %%% adjust it based on the minimum of the previously analyzed (baseline) traces
 else
-    f0St = 0.2 .*(max(rawSt) - min(rawSt)) + min(rawSt);              %%%%%%%%% shehab In case I am using original traces from the begining
+    f0St = 0.2 .*(max(rawSt) - min(rawSt)) + min(rawSt);              %%% In case I am using original traces from the begining
 end
 
-dfoverf0St = bsxfun(@minus, rawSt, f0St);                         %%%%%%%%% shehab
-for i=1:length(f0St), dfoverf0St(dfoverf0St(:,i)<0,i)=0; end      %%%%%%%%% shehab
-
-%calculate dF/F0 
-%dfoverf0 = (raw - f0)./f0; %For matlab R2016b onwards
-%%%dfoverf0St = bsxfun(@rdivide,(bsxfun(@minus, rawSt, f0St)), f0St);   %%%%%%%%%%%%%%% Juan  %%%      %%% calculates dF/F0 as (raw - F0)/F0  
-
+dfoverf0St = bsxfun(@minus, rawSt, f0St);                        
+for i=1:length(f0St), dfoverf0St(dfoverf0St(:,i)<0,i)=0; end      
     
 % Time axis in seconds
 sSt = bsxfun(@times, dt, [1:size(dfoverf0St,1)]);
 
-%%%%%%%%%%%%%%%shehab 
-% % % % % % % neg=f0St<0;                                                                    %%% logical, true whenever there is negative f0St
-% % % % % % % dfoverf0St=bsxfun(@times, dfoverf0St , (neg.*-1));                             %%% flip the trace because it will be already in the negative direction if the f0St was negative
-%%%%%%%%%%%%%%%shehab
-
 % Normalize dF/F0 to max response of each cell.
 NormdSt = bsxfun(@rdivide,dfoverf0St,max(dfoverf0St));                                       %%% Normalise dF/F0 of each cell to the maximum F0 of that cell
-%%%
 NormdSt(isnan(NormdSt))=0;                                                                   %%% cells that became silent in the second phase of analysis (rotenone) will have negative values after using the 
-                                                                                             %%% threshold f
-%%%
 FrameAvgSt = mean(NormdSt,2); %Network activity magnitude = to % of activity ceiling         %%% average activity in each frame to show frames with highest population activity
 
 % Generate random distribution of chance level coactive events
@@ -235,7 +153,7 @@ for i = 1:nCells                                                                
 end
 
 % Get frame n of non zero frames                                                            
-EnsActIdStNonZero = (sum(EnsActIdSt,1)) > 1;                %%????? why more than 1 not 0
+EnsActIdStNonZero = (sum(EnsActIdSt,1)) > 1;                
 EnsActIdStNonZero = find(EnsActIdStNonZero);                %% indices of frames involved in above-cutoff activity                 
 
 % Remove columns (frames) with all zero elements
@@ -335,7 +253,7 @@ savefig([savedir{files} 'Fig2 EnsCaSt.fig'])
 hold off
 close
 %% Calculate Similarity index (SI = cosine of the angle between the vectors) between each Id vector pair)    
-                                                                                     %%%%??????????????????? is the heading correct about using the COSINE ??
+                                                                                     %%%% is the heading correct about using the COSINE ??
 %Act
 
 nFrames = size(EnsActIdSt,2);                                                               %%% uses the frames that are above the cutoff
@@ -347,10 +265,10 @@ parfor i = 1:nFrames
     end
 end
 
-%Concatenate the SI calculations in one vector                                        %%%%%%%???????????????
-SIactIdStPlot = [];                                                                   %%%%%%%???????????????
-for i = 1:nFrames                                                                     %%%%%%%???????????????
-    SIactIdStPlot = vertcat(SIactIdStPlot,SIactIdSt(i+1:nFrames,i));                  %%%%%%%???????????????
+%Concatenate the SI calculations in one vector                                        
+SIactIdStPlot = [];                                                                 
+for i = 1:nFrames                                                                    
+    SIactIdStPlot = vertcat(SIactIdStPlot,SIactIdSt(i+1:nFrames,i));                  
 end
 
 % %Deact
@@ -387,7 +305,7 @@ for iii = 1:10000 % can be reduced to 1000, times works OK.
     end
     
     % Calculate SI
-    SIactIdShift = NaN(nFrames,nFrames);              %???????? why NaNs instead of zeros        %%% creates a sqaure shape matrix for ploting SI between all pairs of frames (randomized above-cutoff frames) 
+    SIactIdShift = NaN(nFrames,nFrames);                                                         %%% creates a sqaure shape matrix for ploting SI between all pairs of frames (randomized above-cutoff frames) 
     for i = 1:nFrames
         for ii = i+1:nFrames                                                                     %%% this is a trick to generate half the SI plot w/o its mirror image, to reduce computational time
         SIactIdShift(i,ii) = (dot(EnsActIdShift(:,i),EnsActIdShift(:,ii)))/...                   %%% this is the equation for calculating similarity index -->  SI = Ca.Cb / ((|Ca|²+|Cb|²) / 2)
@@ -659,7 +577,7 @@ end
 % % of frames with higher than chance level recurrent co-active events (Ensembles)
 % Diversity index of ensembles
 
-%%%%%%%%%%%%%%%%%%% shehab
+%%%%%%%%%%%%%%%%%%% 
 if  isempty(EnsRecActIdSt)
     percCellsRecru=0; RecruCellsID=[]; percEnsDur=0;general_sim=0;thresh4clust=[];
 else
@@ -670,7 +588,7 @@ end
 AUC=trapz(clean_traces,2); meanAUCs=mean(trapz(clean_traces,2)); medianAUCs=median(trapz(clean_traces,2));                                          %%% new way calculating AUC
 EnsAUC=sum(NormdSt(:,RecruCellsID),1); meanEnsAUCs=mean(sum(NormdSt(:,RecruCellsID),1)); medianEnsAUCs=median(sum(NormdSt(:,RecruCellsID),1));  %%% same but for cells recruited in ensembles
 [percDepolCells , diffMaxMinEvent] = SE_ensembles_depolCells(NormdSt);
-%%%%%%%%%%%%%%%%%%% shehab
+%%%%%%%%%%%%%%%%%%%
 
 Result(1,:)  =    {'PercFramesEnsRecActSt', PercFramesEnsRecActSt};
 Result(2,:)  =    {'RelNumClustEnsActSt', RelNumClustEnsActSt};
@@ -688,9 +606,6 @@ Result(13,:) =    {'medianEnsAUCs', medianEnsAUCs};
 Result(14,:) =    {'percDepolCells', percDepolCells};
 Result(15,:) =    {'diffMaxMinEvent', diffMaxMinEvent};
 
-% % % % % % % % % % % % % % % %
-% % % % % % % % % % % % % % % % save('Result.mat','Result');
-% % % % % % % % % % % % % % % %
 %%
 save(savefile{files});
 display(['Video number ' num2str(files) ' is analysed and ensembles are saved ;)']);
