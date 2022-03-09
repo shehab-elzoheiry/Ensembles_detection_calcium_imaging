@@ -1,4 +1,5 @@
-%percentage of cells recruited in ensembles formation
+% This is a helping function to output the percentage of cells recruited in ensembles formation
+
 function [percCellsRecru, RecruCellsID, percEnsDur] = SE_ensembles_parameters(EnsActStAll,EnsRecActStFrames,EnsRecActIdSt,dfoverf0St)
 
 for i=1:size(EnsRecActIdSt,1)                                                               %%% look for cells that were active in any ensemble
